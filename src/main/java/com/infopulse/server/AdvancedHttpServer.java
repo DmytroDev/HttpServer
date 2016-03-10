@@ -1,6 +1,6 @@
 package com.infopulse.server;
 
-import com.infopulse.films.Films;
+import com.infopulse.films.Movies;
 
 import java.io.*;
 import java.net.ServerSocket;
@@ -18,46 +18,52 @@ public class AdvancedHttpServer {
         while (true) {
             try (Socket socket = serverSocket.accept();
                  BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-                 BufferedWriter out = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()))) {
+                 BufferedWriter bufferedWriter = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()))) {
 
+                // header bellow
+                bufferedWriter.write("HTTP/1.0 200 OK\r\n");
+                bufferedWriter.write("Server: Apache/0.8.4\r\n");
+                bufferedWriter.write("Content-Type: text/html\r\n");
+                bufferedWriter.write("\r\n");
+                // content bellow
+                bufferedWriter.write("<TITLE>Movie description</TITLE>");
+
+                String fileConsistents = null;
                 String urlPattern = getHeaderFromRequest(bufferedReader);
                 if (!"favicon.ico".equals(urlPattern)) {
                     switch (urlPattern) {
                         case "300":
-                            getFile(Films.THREE_HUNDRED);
+                            fileConsistents = getInfoFromFile(Movies.THREE_HUNDRED);
                             break;
                         case "green":
-                            getFile(Films.GREEN_BEAUTIFUL);
+                            fileConsistents = getInfoFromFile(Movies.GREEN_BEAUTIFUL);
                             break;
                         case "truth":
-                            getFile(Films.UGLY_TRUTH);
+                            fileConsistents = getInfoFromFile(Movies.UGLY_TRUTH);
                             break;
                         default:
-                            getFile(Films.INCORRECT);
+                            fileConsistents = getInfoFromFile(Movies.INCORRECT);
                             break;
                     }
                 }
-                out.write("HTTP/1.0 200 OK\r\n");
-                out.write("Server: Apache/0.8.4\r\n");
-                out.write("Content-Type: text/html\r\n");
-                out.write("\r\n");  // content bellow
-                out.write("<TITLE>Example</TITLE>");
-                out.write("<P>Hello from server</P>");
-
+                bufferedWriter.write("<P>" + fileConsistents + "</P>");
             }
         }
     }
 
-    // TODO: need change type value that return
-    private void getFile(String fileName) throws IOException {
+    // Method get text from concrete file
+    private String getInfoFromFile(String fileName) throws IOException {
+        StringBuffer fileContents = null;
         try (InputStream inputStream = this.getClass().getResourceAsStream("/content/" + fileName);
              BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
 
-            String lineFromFile = null;
-            while ((lineFromFile = reader.readLine()) != null) {
-                System.out.println(lineFromFile);
+            fileContents = new StringBuffer();
+            String temporaryLine = null;
+            while ((temporaryLine = reader.readLine()) != null) {
+                fileContents.append(temporaryLine);
             }
         }
+        return fileContents.toString();
     }
 
     // Method get url pattern  from request header (part of first line)
