@@ -1,0 +1,28 @@
+# Eclipse project files
+.settings
+.classpath
+.project
+.metadata
+.mymetadata
+.springBeans
+.gradle
+
+# IntelliJ Idea project files
+.idea/
+*.iml
+*.ipr
+*.iws
+/out/
+
+# Maven files
+*.jar
+*.war
+*.ear
+target/
+
+#log files
+*.log*
+logs
+
+*.class
+
