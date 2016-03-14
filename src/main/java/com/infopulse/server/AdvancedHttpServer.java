@@ -1,5 +1,8 @@
 package com.infopulse.server;
 
+import com.infopulse.service.CalculateCommand;
+import com.infopulse.service.CalculateService;
+
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -8,7 +11,7 @@ import java.util.Date;
 import java.util.List;
 
 public class AdvancedHttpServer {
-    final String DIRECTORY = "./content";
+    private final String DIRECTORY = "./content";
 
     public static void main(String[] args) throws IOException {
         new AdvancedHttpServer().run();
@@ -27,14 +30,31 @@ public class AdvancedHttpServer {
                 String urlPattern = getHeaderFromRequest(bufferedReader);
 
                 if (!"favicon.ico".equals(urlPattern)) {
-                    if ("".equals(urlPattern)) {
-                        createInitialPage(bufferedWriter, listFiles);
-                    } else {
-                        for (String file : listFiles) {
-                            if (file.equals(urlPattern)) {
-                                createFilePage(bufferedWriter, file);
-                                break;
+                    String switcher = getSwitcher(urlPattern);
+                    switch (switcher) {
+                        case "": {
+                            createInitialPage(bufferedWriter, listFiles);
+                            break;
+                        }
+                        case "favicon.ico": {
+                            break;
+                        }
+                        case "calculate": {
+                            CalculateService service = new CalculateService(urlPattern);
+                            createCalculateResultPage(bufferedWriter, service);
+                        }
+                        case "file": {
+                            for (String file : listFiles) {
+                                if (("file/" + file).equals(urlPattern)) {
+                                    createFilePage(bufferedWriter, file);
+                                    break;
+                                }
                             }
+                            break;
+                        }
+                        default: {
+                            createInitialPage(bufferedWriter, listFiles);
+                            break;
                         }
                     }
                 }
@@ -72,8 +92,6 @@ public class AdvancedHttpServer {
     // Method for creating initial page
     private void createInitialPage(BufferedWriter bufferedWriter, List<String> fileList) {
         try {
-            //List<String> fileList = getListOfFiles(DIRECTORY);
-
             StringBuilder stringBuilder = new StringBuilder();
             createHeader(stringBuilder);
 
@@ -81,7 +99,7 @@ public class AdvancedHttpServer {
             stringBuilder.append("<ul>");
 
             for (String fileName : fileList) {
-                stringBuilder.append("<li><a href=\"http://localhost:3000/" + fileName + "\">" + fileName + "</a></li>\n");
+                stringBuilder.append("<li><a href=\"http://localhost:3000/file/" + fileName + "\">" + fileName + "</a></li>\n");
             }
             stringBuilder.append("</ul>");
             createFooterInitialPage(stringBuilder);
@@ -93,7 +111,7 @@ public class AdvancedHttpServer {
         }
     }
 
-    private void createFilePage(BufferedWriter bufferedWriter, String fileName){
+    private void createFilePage(BufferedWriter bufferedWriter, String fileName) {
         StringBuilder stringBuilder = new StringBuilder();
         try {
             createHeader(stringBuilder);
@@ -103,6 +121,22 @@ public class AdvancedHttpServer {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    private void createCalculateResultPage(BufferedWriter bufferedWriter, CalculateService service) {
+        StringBuilder stringBuilder = new StringBuilder();
+        try {
+            createHeader(stringBuilder);
+
+            CalculateCommand command = service.parseUrlPattern();
+            stringBuilder.append("Result is: " + service.calculate(command));
+            createFooterFilePage(stringBuilder);
+            bufferedWriter.write(stringBuilder.toString());
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
     }
 
     private void createHeader(StringBuilder stringBuilder) throws IOException {
@@ -139,6 +173,20 @@ public class AdvancedHttpServer {
             }
         }
         return fileList;
-
     }
+
+    private String getSwitcher(String urlPattern) {
+        String switcher = null;
+        if (urlPattern.contains("calculate?")) {
+            switcher = "calculate";
+        } else {
+            if (urlPattern.contains("file"))
+                switcher = "file";
+            else {
+                switcher = urlPattern;
+            }
+        }
+        return switcher;
+    }
+
 }
