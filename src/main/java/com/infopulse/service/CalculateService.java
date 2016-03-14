@@ -63,7 +63,7 @@ public class CalculateService {
         return 0;
     }
 
-    public static final class Operations{
+    private static final class Operations{
 
         public final static String ADDITION = "add";
         public final static String SUBSTRACTION = "sub";
